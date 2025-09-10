@@ -1,0 +1,11 @@
+name: Aragokt
+version: '1.0-SNAPSHOT'
+main: io.d2a.aragokt.AragoktPlugin
+api-version: '1.21'
+authors:
+  - d2aniel
+dependencies:
+  server:
+    LuckPerms:
+      load: BEFORE
+      required: true
