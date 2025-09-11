@@ -18,7 +18,7 @@ fun String.toComponent(format: TextFormat): Component = when (format) {
 }
 
 fun String.toComponent(): Component =
-    if (this.indexOf('<') <= 0) toComponent(TextFormat.MINI_MESSAGE)
+    if (this.contains('<', true)) toComponent(TextFormat.MINI_MESSAGE)
     else toComponent(TextFormat.LEGACY)
 
 fun Component.namedColor(): NamedTextColor? =

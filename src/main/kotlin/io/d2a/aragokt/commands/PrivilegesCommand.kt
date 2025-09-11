@@ -31,6 +31,7 @@ class PrivilegesCommand(
 
         const val USE_PERMISSION = "aragokt.privileges.use"
         const val USE_OTHER_PERMISSION = "aragokt.privileges.use.other"
+        const val SETUP_PERMISSION = "aragokt.privileges.setup"
 
         const val SUPER_USER_GROUP_NAME = "su"
         private const val MAX_PRIVILEGE_DURATION_MINUTES = 15
@@ -88,7 +89,12 @@ class PrivilegesCommand(
         user: User,
         durationMinutes: Int
     ) {
-        val node = InheritanceNode.builder(SUPER_USER_GROUP_NAME)
+        val group = luckPerms.groupManager.getGroup(SUPER_USER_GROUP_NAME) ?: run {
+            sender.sendRichMessage("<red>error: Privileged group '$SUPER_USER_GROUP_NAME' does not exist.")
+            return
+        }
+
+        val node = InheritanceNode.builder(group)
             .expiry(durationMinutes.toLong(), TimeUnit.MINUTES)
             // store the approver info so we know if a player can remove the privileges later
             .withMetadata(
