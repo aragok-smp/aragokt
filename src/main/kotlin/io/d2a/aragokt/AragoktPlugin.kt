@@ -1,21 +1,20 @@
 package io.d2a.aragokt
 
 import io.d2a.aragokt.commands.PrivilegesCommand
-import io.d2a.aragokt.flair.LuckPermsPrefixSuffixProvider
-import io.d2a.aragokt.flair.NametagService
-import io.d2a.aragokt.flair.PrefixSuffixProvider
+import io.d2a.aragokt.flair.*
 import io.d2a.aragokt.flair.listener.ChatListener
 import io.d2a.aragokt.flair.listener.JoinQuitListener
-import io.d2a.aragokt.flair.subscribeFlairLiveUpdates
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
 import net.luckperms.api.LuckPerms
 import net.luckperms.api.event.EventSubscription
+import net.luckperms.api.event.group.GroupDataRecalculateEvent
 import net.luckperms.api.event.user.UserDataRecalculateEvent
 import org.bukkit.plugin.java.JavaPlugin
 
 class AragoktPlugin : JavaPlugin() {
 
-    private var luckPermsLiveUpdateSubscription: EventSubscription<UserDataRecalculateEvent>? = null
+    private var luckPermsLiveUserUpdateSubscription: EventSubscription<UserDataRecalculateEvent>? = null
+    private var luckPermsLiveGroupUpdateSubscription: EventSubscription<GroupDataRecalculateEvent>? = null
 
     override fun onEnable() {
         val luckPerms = server.servicesManager.load(LuckPerms::class.java)
@@ -39,7 +38,8 @@ class AragoktPlugin : JavaPlugin() {
         }
 
         // subscribe to rank / prefix / suffix changes
-        luckPermsLiveUpdateSubscription = luckPerms.subscribeFlairLiveUpdates(this, nametagService)
+        luckPermsLiveUserUpdateSubscription = luckPerms.subscribeFlairUserLiveUpdates(this, nametagService)
+        luckPermsLiveGroupUpdateSubscription = luckPerms.subscribeFlairGroupLiveUpdates(this, nametagService)
 
         // apply nametags to online players (in case of reload)
         server.onlinePlayers.forEach(nametagService::applyTo)
@@ -48,8 +48,8 @@ class AragoktPlugin : JavaPlugin() {
     }
 
     override fun onDisable() {
-        luckPermsLiveUpdateSubscription?.close()
-        luckPermsLiveUpdateSubscription = null
+        luckPermsLiveUserUpdateSubscription?.close()
+        luckPermsLiveGroupUpdateSubscription?.close()
     }
 
     private fun disableWithError(message: String) {
