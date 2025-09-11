@@ -1,19 +1,21 @@
 package io.d2a.aragokt
 
 import io.d2a.aragokt.commands.PrivilegesCommand
-import io.d2a.aragokt.flair.*
+import io.d2a.aragokt.flair.LuckPermsLiveUpdateExtension
+import io.d2a.aragokt.flair.LuckPermsPrefixSuffixProvider
+import io.d2a.aragokt.flair.NametagService
+import io.d2a.aragokt.flair.PrefixSuffixProvider
 import io.d2a.aragokt.flair.listener.ChatListener
 import io.d2a.aragokt.flair.listener.JoinQuitListener
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
 import net.luckperms.api.LuckPerms
 import net.luckperms.api.event.EventSubscription
 import net.luckperms.api.event.group.GroupDataRecalculateEvent
-import net.luckperms.api.event.user.UserDataRecalculateEvent
 import org.bukkit.plugin.java.JavaPlugin
 
 class AragoktPlugin : JavaPlugin() {
 
-    private var luckPermsLiveUserUpdateSubscription: EventSubscription<UserDataRecalculateEvent>? = null
+    private var luckPermsLiveUserUpdate: LuckPermsLiveUpdateExtension? = null
     private var luckPermsLiveGroupUpdateSubscription: EventSubscription<GroupDataRecalculateEvent>? = null
 
     override fun onEnable() {
@@ -38,8 +40,10 @@ class AragoktPlugin : JavaPlugin() {
         }
 
         // subscribe to rank / prefix / suffix changes
-        luckPermsLiveUserUpdateSubscription = luckPerms.subscribeFlairUserLiveUpdates(this, nametagService)
-        luckPermsLiveGroupUpdateSubscription = luckPerms.subscribeFlairGroupLiveUpdates(this, nametagService)
+        luckPermsLiveUserUpdate = LuckPermsLiveUpdateExtension(this, logger, nametagService, luckPerms).apply {
+            subscribeFlairUserLiveUpdates()
+            subscribeFlairGroupLiveUpdates()
+        }
 
         // apply nametags to online players (in case of reload)
         server.onlinePlayers.forEach(nametagService::applyTo)
@@ -48,8 +52,7 @@ class AragoktPlugin : JavaPlugin() {
     }
 
     override fun onDisable() {
-        luckPermsLiveUserUpdateSubscription?.close()
-        luckPermsLiveGroupUpdateSubscription?.close()
+        luckPermsLiveUserUpdate?.close()
     }
 
     private fun disableWithError(message: String) {

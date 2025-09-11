@@ -16,6 +16,11 @@ class NametagService(
     private val playerTeamNames = mutableMapOf<UUID, String>()
 
     fun applyTo(player: Player) {
+        if (!player.isOnline) {
+            logger.info("Player ${player.name} (${player.uniqueId}) is not online, skipping nametag application")
+            return
+        }
+
         logger.info("Applying nametag to player ${player.name} (${player.uniqueId})")
 
         val teamName = getTeamNameFor(player)
