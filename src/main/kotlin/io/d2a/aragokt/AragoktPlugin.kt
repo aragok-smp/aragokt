@@ -3,6 +3,8 @@ package io.d2a.aragokt
 import io.d2a.aragokt.coal.CoalListener
 import io.d2a.aragokt.coal.CoalType
 import io.d2a.aragokt.commands.PrivilegesCommand
+import io.d2a.aragokt.devnull.DevNullItem
+import io.d2a.aragokt.devnull.DevNullListener
 import io.d2a.aragokt.flair.LuckPermsLiveUpdateExtension
 import io.d2a.aragokt.flair.LuckPermsPrefixSuffixProvider
 import io.d2a.aragokt.flair.NametagService
@@ -30,6 +32,7 @@ class AragoktPlugin : JavaPlugin() {
         }
 
         registerCoalFeature()
+        registerDevNullFeature()
         registerFlairFeature(luckPerms)
 
         logger.info("Enabled AragoktPlugin")
@@ -47,6 +50,15 @@ class AragoktPlugin : JavaPlugin() {
 
         server.pluginManager.apply {
             registerEvents(CoalListener(), this@AragoktPlugin)
+        }
+    }
+
+    fun registerDevNullFeature() {
+        logger.info("Registering dev/null item and listener...")
+        DevNullItem.registerRecipe(this)
+
+        server.pluginManager.apply {
+            registerEvents(DevNullListener(), this@AragoktPlugin)
         }
     }
 

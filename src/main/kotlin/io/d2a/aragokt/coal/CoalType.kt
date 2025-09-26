@@ -1,7 +1,7 @@
 package io.d2a.aragokt.coal
 
+import io.d2a.aragokt.extension.noItalic
 import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.inventory.ItemRarity
@@ -56,10 +56,7 @@ enum class CoalType(
      */
     fun toItem(): ItemStack = ItemStack.of(Material.COAL).apply {
         itemMeta = itemMeta?.apply {
-            displayName(
-                Component.text(this@CoalType.displayName)
-                    .decoration(TextDecoration.ITALIC, false)
-            )
+            displayName(Component.text(this@CoalType.displayName).noItalic())
             setRarity(this@CoalType.rarity)
             itemModel = this@CoalType.itemModel
             persistentDataContainer.set(
@@ -78,7 +75,11 @@ enum class CoalType(
          * Returns null if the item is not a special coal item.
          */
         fun fromItem(item: ItemStack?): CoalType? {
-            val ordinal = item?.itemMeta?.persistentDataContainer?.run {
+            // these checks are only to improve performance
+            if (item?.type != Material.COAL || !item.hasItemMeta()) {
+                return null
+            }
+            val ordinal = item.itemMeta?.persistentDataContainer?.run {
                 get(PDC_KEY_COAL_TYPE, PersistentDataType.BYTE)
             } ?: return null
             return entries.getOrNull(ordinal.toInt())

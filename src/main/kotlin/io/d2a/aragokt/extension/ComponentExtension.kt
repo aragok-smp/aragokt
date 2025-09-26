@@ -2,6 +2,7 @@ package io.d2a.aragokt.extension
 
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.text.minimessage.MiniMessage
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 
@@ -23,3 +24,6 @@ fun String.toComponent(): Component =
 
 fun Component.namedColor(): NamedTextColor? =
     this.color()?.let { NamedTextColor.nearestTo(it) }
+
+fun Component.noItalic(): Component =
+    this.decoration(TextDecoration.ITALIC, false)
