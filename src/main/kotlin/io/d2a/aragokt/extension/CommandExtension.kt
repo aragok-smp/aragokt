@@ -49,3 +49,7 @@ fun <T : ArgumentBuilder<CommandSourceStack, T>> T.executesPlayer(
         block(ctx, player)
     }
 }
+
+fun <T : ArgumentBuilder<CommandSourceStack, T>> T.requiresPermission(permission: String): T = this.requires { ctx ->
+    ctx.sender.hasPermission(permission)
+}

@@ -1,65 +1,107 @@
 package io.d2a.aragokt.border
 
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.World
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.plugin.Plugin
-import java.io.IOException
-import java.time.LocalDateTime
+import org.bukkit.scheduler.BukkitTask
+import java.io.Closeable
+import java.io.File
+import java.time.Clock
+import java.time.LocalDate
 import java.time.LocalTime
-
+import java.util.logging.Level
 
 class BorderTask(
     private val plugin: Plugin,
-) {
+    private val clock: Clock = Clock.systemDefaultZone()
+) : Runnable, Closeable {
 
-    val runTime: LocalTime = LocalTime.of(2, 20) // 6 PM server time
-    val advanceAmount = 1000.0 // Amount to advance the border by each day
-    val advanceTime = 60L // Time in seconds for the border to advance
-
-    fun init() {
-        plugin.logger.info("World border will advance every day at lalalal server time.")
-        plugin.server.scheduler.runTaskTimer(plugin, advanceBorderTask(), 0, 20)
-    }
-
-    fun advanceBorderTask(): Runnable = Runnable {
-        val stateFile = plugin.dataFolder.resolve("state.yml")
-
-        // Create the file if it doesn't exist
-        if (!stateFile.exists()) {
-            try {
-                stateFile.createNewFile()
-            } catch (e: IOException) {
-                e.printStackTrace()
+    private val stateFile: File = plugin.dataFolder
+        .also { it.mkdirs() } // create the plugin folder if it doesn't exist
+        .resolve("state.yaml")
+        .apply {
+            if (!exists()) {
+                runCatching { createNewFile() }
+                    .onFailure { plugin.logger.log(Level.SEVERE, "Failed to create state file", it) }
             }
         }
 
-        val config = YamlConfiguration.loadConfiguration(stateFile)
-        val lastAdvancedTime =
-            config.getString("borders.lastAdvancedTime")
-                ?.let { LocalDateTime.parse(it) }
-                ?: LocalDateTime.now().minusDays(1)
+    private val state: YamlConfiguration = YamlConfiguration.loadConfiguration(stateFile)
 
-        if (LocalTime.now().isBefore(runTime) || lastAdvancedTime.dayOfYear == LocalDateTime.now().dayOfYear) {
-            // Not time yet, or already advanced today
-            return@Runnable
-        }
-        plugin.logger.info("Advancing borders for each world...")
-        plugin.server.worlds
-            .forEach { world ->
-                plugin.logger.info("Advancing borders for ${world.name}")
-                advanceBorder(world)
-            }
-        config.set("borders.lastAdvancedTime", LocalDateTime.now().toString())
-        config.save(stateFile)
+    private val task: BukkitTask
+
+    companion object {
+        private const val LAST_ADVANCE_KEY = "borders.lastAdvancedTime"
+        private val RUN_TIME: LocalTime = LocalTime.of(2, 20) // 2:20 AM server time
+        private const val ADVANCE_AMOUNT = 1_000.0 // Amount to advance the border by each day
+        private const val ADVANCE_TIME = 60L // Time in seconds for the border to advance
+        private const val TICKS_PER_CHECK = 20L * 30L // Check every 30 seconds
     }
 
-    fun advanceBorder(world: World) {
+    init {
+        plugin.logger.info("World border will advance $ADVANCE_AMOUNT every day at $RUN_TIME server time.")
+
+        // calculate the ticks to next 30s interval
+        val seconds = LocalTime.now(clock).second
+        val secondsToNextInterval = (30 - (seconds % 30)) % 30
+        val initialDelayTicks = secondsToNextInterval * 20L
+
+        task = plugin.server.scheduler.runTaskTimer(
+            plugin,
+            this,
+            initialDelayTicks,
+            TICKS_PER_CHECK
+        )
+    }
+
+    override fun run() {
+        // check if it's TIME to run
+        if (LocalTime.now(clock).isBefore(RUN_TIME)) {
+            return
+        }
+
+        val today = LocalDate.now(clock)
+        val lastRun = state.getString(LAST_ADVANCE_KEY)?.let(LocalDate::parse)
+
+        // if we ran today already, skip
+        if (lastRun?.isEqual(today) == true) {
+            return
+        }
+
+        advance(today)
+    }
+
+    override fun close() {
+        task.cancel()
+    }
+
+    // public advance for manual triggering (e.g. command)
+    fun advance() = advance(LocalDate.now(clock))
+
+    private fun advance(today: LocalDate) {
+        plugin.server.worlds.forEach(this::advanceBorder)
+
+        state.set(LAST_ADVANCE_KEY, today.toString())
+        runCatching { state.save(stateFile) }
+            .onFailure {
+                plugin.logger.log(Level.SEVERE, "Failed to save border state to file: ${stateFile.path}", it)
+            }
+    }
+
+    private fun advanceBorder(world: World) {
+        plugin.logger.info("Advancing border in world ${world.name} by $ADVANCE_AMOUNT over $ADVANCE_TIME seconds.")
+
         val border = world.worldBorder
         val currentBorderSize = border.size
-        val newSize = currentBorderSize + advanceAmount
+        val newSize = currentBorderSize + ADVANCE_AMOUNT
 
-        world.sendMessage(Component.text("Advancing world border from $currentBorderSize to $newSize."))
-        border.setSize(newSize, advanceTime)
+        world.sendMessage(
+            Component.text("Advancing world border from $currentBorderSize to $newSize.")
+                .color(NamedTextColor.YELLOW)
+        )
+        border.setSize(newSize, ADVANCE_TIME)
     }
+
 }
