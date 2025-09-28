@@ -88,6 +88,7 @@ class BorderTask(
         runCatching { state.save(stateFile) }
             .onFailure {
                 plugin.logger.log(Level.SEVERE, "Failed to save border state to file: ${stateFile.path}", it)
+                this@BorderTask.close() // disable the task to prevent repeated advance attempts
             }
     }
 
