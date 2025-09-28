@@ -34,10 +34,11 @@ class BorderTask(
 
     companion object {
         private const val LAST_ADVANCE_KEY = "borders.lastAdvancedTime"
-        private val RUN_TIME: LocalTime = LocalTime.of(2, 20) // 2:20 AM server time
-        private const val ADVANCE_AMOUNT = 1_000.0 // Amount to advance the border by each day
+        private val RUN_TIME: LocalTime = LocalTime.of(19, 0) // 7 PM server time
+        private const val ADVANCE_AMOUNT = 500.0 // Amount to advance the border by each day
         private const val ADVANCE_TIME = 60L // Time in seconds for the border to advance
         private const val TICKS_PER_CHECK = 20L * 30L // Check every 30 seconds
+        private const val MAX_BORDER_SIZE = 50_000.0 // Maximum border size
     }
 
     init {
@@ -91,14 +92,19 @@ class BorderTask(
     }
 
     private fun advanceBorder(world: World) {
-        plugin.logger.info("Advancing border in world ${world.name} by $ADVANCE_AMOUNT over $ADVANCE_TIME seconds.")
-
         val border = world.worldBorder
         val currentBorderSize = border.size
+        if (currentBorderSize >= MAX_BORDER_SIZE) {
+            // if the border is not enabled in this world, skip it
+            plugin.logger.info("World border too large in world ${world.name}, skipping.")
+            return
+        }
+
+        plugin.logger.info("Advancing border in world ${world.name} by $ADVANCE_AMOUNT over $ADVANCE_TIME seconds.")
         val newSize = currentBorderSize + ADVANCE_AMOUNT
 
         world.sendMessage(
-            Component.text("Advancing world border from $currentBorderSize to $newSize.")
+            Component.text("World border advancing from $currentBorderSize to $newSize")
                 .color(NamedTextColor.YELLOW)
         )
         border.setSize(newSize, ADVANCE_TIME)
