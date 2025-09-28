@@ -1,5 +1,6 @@
 package io.d2a.aragokt
 
+import io.d2a.aragokt.border.BorderTask
 import io.d2a.aragokt.coal.CoalListener
 import io.d2a.aragokt.coal.CoalType
 import io.d2a.aragokt.commands.PrivilegesCommand
@@ -31,9 +32,13 @@ class AragoktPlugin : JavaPlugin() {
             }
         }
 
+        createPluginFolder()
+
         registerCoalFeature()
         registerDevNullFeature()
         registerFlairFeature(luckPerms)
+
+        BorderTask(plugin = this).init()
 
         logger.info("Enabled AragoktPlugin")
     }
@@ -43,6 +48,13 @@ class AragoktPlugin : JavaPlugin() {
     }
 
     ///
+
+    fun createPluginFolder() {
+        // Create plugin folder if missing
+        if (!this.dataFolder.exists()) {
+            this.dataFolder.mkdirs()
+        }
+    }
 
     fun registerCoalFeature() {
         logger.info("Registering coal item and listener...")
