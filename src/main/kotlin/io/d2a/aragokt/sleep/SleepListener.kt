@@ -1,11 +1,13 @@
 package io.d2a.aragokt.sleep
 
 import io.papermc.paper.event.player.PlayerDeepSleepEvent
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.World
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerInteractEvent
-import org.bukkit.event.player.PlayerKickEvent
 import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import java.util.*
@@ -23,19 +25,27 @@ class SleepListener : Listener {
 
     fun advanceNightIfNeeded(world: World) {
         val sleepingPlayers = world.players.count { it.isSleeping }
-        val requiredPlayers = ceil(world.players.count { isPlayerAfk(it.uniqueId) } / 2.0).toInt()
+        val requiredPlayers = ceil(world.players.count { !isPlayerAfk(it.uniqueId) } / 2.0).toInt()
         if (sleepingPlayers >= requiredPlayers) {
             world.time = 0 // set time to day
             world.weatherDuration = 0 // clear weather
             world.isThundering = false
             world.players.forEach { player ->
-                player.sendMessage("§a§lNight skipped! Good morning!")
+                player.sendMessage(
+                    Component.text("Night skipped! Good morning!")
+                        .color(NamedTextColor.GREEN)
+                        .decorate(TextDecoration.BOLD)
+                )
                 player.playSound(player.location, "minecraft:entity.player.levelup", 1.0f, 1.0f)
             }
         } else {
             val remaining = requiredPlayers - sleepingPlayers
             world.players.forEach { player ->
-                player.sendMessage("§e§l$remaining more player(s) need to sleep to skip the night.")
+                player.sendMessage(
+                    Component.text("$remaining more player(s) need to sleep to skip the night.")
+                        .color(NamedTextColor.YELLOW)
+                        .decorate(TextDecoration.BOLD)
+                )
             }
         }
     }
@@ -57,14 +67,10 @@ class SleepListener : Listener {
         advanceNightIfNeeded(event.player.world)
     }
 
-
     @EventHandler
     fun onPlayerQuit(event: PlayerQuitEvent) {
         advanceNightIfNeeded(event.player.world)
+        playerData.remove(event.player.uniqueId)
     }
 
-    @EventHandler
-    fun onPlayerKick(event: PlayerKickEvent) {
-        advanceNightIfNeeded(event.player.world)
-    }
 }
