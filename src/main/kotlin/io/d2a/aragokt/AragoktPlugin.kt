@@ -14,6 +14,7 @@ import io.d2a.aragokt.flair.NametagService
 import io.d2a.aragokt.flair.PrefixSuffixProvider
 import io.d2a.aragokt.flair.listener.ChatListener
 import io.d2a.aragokt.flair.listener.JoinQuitListener
+import io.d2a.aragokt.sleep.SleepListener
 import io.papermc.paper.command.brigadier.Commands
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
 import net.luckperms.api.LuckPerms
@@ -57,6 +58,9 @@ class AragoktPlugin : JavaPlugin() {
                         .build())
                     .build())
             }
+        }
+        server.pluginManager.apply {
+            registerEvents(SleepListener(), this@AragoktPlugin)
         }
 
         registerCoalFeature()
