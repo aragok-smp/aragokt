@@ -1,9 +1,12 @@
 package io.d2a.aragokt.sleep
 
 import io.papermc.paper.event.player.PlayerDeepSleepEvent
+import net.kyori.adventure.sound.Sound.Emitter
+import net.kyori.adventure.sound.Sound.sound
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
+import org.bukkit.Sound
 import org.bukkit.World
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
@@ -30,23 +33,24 @@ class SleepListener : Listener {
             world.time = 0 // set time to day
             world.weatherDuration = 0 // clear weather
             world.isThundering = false
-            world.players.forEach { player ->
-                player.sendMessage(
-                    Component.text("Night skipped! Good morning!")
-                        .color(NamedTextColor.GREEN)
-                        .decorate(TextDecoration.BOLD)
-                )
-                player.playSound(player.location, "minecraft:entity.player.levelup", 1.0f, 1.0f)
-            }
+            world.sendActionBar(
+                Component.text("Night skipped! Good morning!")
+                    .color(NamedTextColor.GREEN)
+                    .decorate(TextDecoration.BOLD)
+            )
+            world.playSound(
+                sound()
+                    .type(Sound.ENTITY_PLAYER_LEVELUP)
+                    .volume(1f)
+                    .build(), Emitter.self()
+            )
         } else {
             val remaining = requiredPlayers - sleepingPlayers
-            world.players.forEach { player ->
-                player.sendMessage(
-                    Component.text("$remaining more player(s) need to sleep to skip the night.")
-                        .color(NamedTextColor.YELLOW)
-                        .decorate(TextDecoration.BOLD)
-                )
-            }
+            world.sendActionBar(
+                Component.text("$remaining more player(s) need to sleep to skip the night.")
+                    .color(NamedTextColor.YELLOW)
+                    .decorate(TextDecoration.BOLD)
+            )
         }
     }
 
