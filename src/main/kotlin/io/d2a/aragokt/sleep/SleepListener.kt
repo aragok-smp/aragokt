@@ -10,7 +10,7 @@ import org.bukkit.Sound
 import org.bukkit.World
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
-import org.bukkit.event.player.PlayerInteractEvent
+import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import java.util.*
@@ -22,7 +22,7 @@ class SleepListener : Listener {
     val afkTimeout: Long = 15 * 60 * 1000 // 15 minutes in milliseconds
 
     fun isPlayerAfk(playerId: UUID): Boolean {
-        val lastActiveTime = playerData[playerId] ?: return false
+        val lastActiveTime = playerData[playerId] ?: return true
         return (System.currentTimeMillis() - lastActiveTime) > afkTimeout
     }
 
@@ -55,7 +55,7 @@ class SleepListener : Listener {
     }
 
     @EventHandler
-    fun onPlayerInteract(event: PlayerInteractEvent) {
+    fun onPlayerJoin(event : PlayerJoinEvent) {
         val player = event.player
         playerData[player.uniqueId] = System.currentTimeMillis()
     }
@@ -63,7 +63,11 @@ class SleepListener : Listener {
     @EventHandler
     fun onPlayerMove(event: PlayerMoveEvent) {
         val player = event.player
-        playerData[player.uniqueId] = System.currentTimeMillis()
+        val from = event.from
+        val to = event.to
+        if (from.blockX != to.blockX || from.blockY != to.blockY || from.blockZ != to.blockZ) {
+            playerData[player.uniqueId] = System.currentTimeMillis()
+        }
     }
 
     @EventHandler
